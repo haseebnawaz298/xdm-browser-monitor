@@ -9,28 +9,7 @@
     "48": "icon.png"
   },
   "background": {
-    "service_worker": "bg.js",
-    "declarative_net_request": {
-      "rule_resources": [
-        {
-          "id": "xdm_download_rule",
-          "enabled": true,
-          "priority": 1,
-          "action": {
-            "type": "modifyHeaders",
-            "responseHeaders": [
-              {
-                "header": "X-Download-Manager",
-                "value": "XDM"
-              }
-            ]
-          },
-          "condition": {
-            "urlFilter": ["*://*/*"]
-          }
-        }
-      ]
-    }
+    "service_worker": "bg.js"
   },
   "action": {
     "default_icon": "icon.png",
@@ -41,9 +20,7 @@
     "cookies",
     "contextMenus",
     "activeTab",
-    "declarativeNetRequest",
-    "webRequest",
-    "webRequestBlocking"
+    "declarativeNetRequest"
   ],
   "host_permissions": ["*://*/*"],
   "commands": {

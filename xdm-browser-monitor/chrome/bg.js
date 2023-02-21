@@ -446,64 +446,64 @@
     var initSelf = function () {
         //This will add the request to request array for later use, 
         //the object is removed from array when request completes or fails
-        chrome.webRequest.onSendHeaders.addListener
-            (
-            function (info) { requests.push(info); },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["requestHeaders"]
-            );
-        chrome.webRequest.onCompleted.addListener
-            (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
-            );
+        // chrome.webRequest.onSendHeaders.addListener
+        //     (
+        //     function (info) { requests.push(info); },
+        //     { urls: ["http://*/*", "https://*/*"] },
+        //     ["requestHeaders"]
+        //     );
+        // chrome.webRequest.onCompleted.addListener
+        //     (
+        //     function (info) {
+        //         removeRequest(info.requestId);
+        //     },
+        //     { urls: ["http://*/*", "https://*/*"] }
+        //     );
 
-        chrome.webRequest.onErrorOccurred.addListener
-            (
-            function (info) {
-                removeRequest(info.requestId);
-            },
-            { urls: ["http://*/*", "https://*/*"] }
-            );
+        // chrome.webRequest.onErrorOccurred.addListener
+        //     (
+        //     function (info) {
+        //         removeRequest(info.requestId);
+        //     },
+        //     { urls: ["http://*/*", "https://*/*"] }
+        //     );
 
-        //This will monitor and intercept files download if 
-        //criteria matches and XDM is running
-        //Use request array to get request headers
-        chrome.webRequest.onHeadersReceived.addListener
-            (
-            function (response) {
-                var requests = removeRequest(response.requestId);
-                if (!isXDMUp) {
-                    return;
-                }
+        // //This will monitor and intercept files download if 
+        // //criteria matches and XDM is running
+        // //Use request array to get request headers
+        // chrome.webRequest.onHeadersReceived.addListener
+        //     (
+        //     function (response) {
+        //         var requests = removeRequest(response.requestId);
+        //         if (!isXDMUp) {
+        //             return;
+        //         }
 
-                if (!monitoring) {
-                    return;
-                }
+        //         if (!monitoring) {
+        //             return;
+        //         }
 
-                if (disabled) {
-                    return;
-                }
+        //         if (disabled) {
+        //             return;
+        //         }
 
-                if (!(response.statusLine.indexOf("200") > 0
-                    || response.statusLine.indexOf("206") > 0)) {
-                    return;
-                }
+        //         if (!(response.statusLine.indexOf("200") > 0
+        //             || response.statusLine.indexOf("206") > 0)) {
+        //             return;
+        //         }
 
-                if (requests) {
-                    if (requests.length == 1) {
-                        if (!(response.url + "").startsWith(xdmHost)) {
-                            //console.log("processing request " + response.url);
-                            return processRequest(requests[0], response);
-                        }
-                    }
-                }
-            },
-            { urls: ["http://*/*", "https://*/*"] },
-            ["blocking", "responseHeaders"]
-            );
+        //         if (requests) {
+        //             if (requests.length == 1) {
+        //                 if (!(response.url + "").startsWith(xdmHost)) {
+        //                     //console.log("processing request " + response.url);
+        //                     return processRequest(requests[0], response);
+        //                 }
+        //             }
+        //         }
+        //     },
+        //     { urls: ["http://*/*", "https://*/*"] },
+        //     ["blocking", "responseHeaders"]
+        //     );
 
         //check XDM if is running and enable monitoring
         setInterval(function () { syncXDM(); }, 1000);
@@ -553,23 +553,56 @@
             }
         });
 
-        chrome.contextMenus.create({
-            title: "Download with XDM",
-            contexts: ["link", "video", "audio"],
-            onclick: sendLinkToXDM,
-        });
+      // Create the context menu item
+		chrome.contextMenus.create({
+			id: "uniqueid1",
+			title: "Download with XDM",
+			contexts: ["link", "video", "audio"],
+		});
 
-        chrome.contextMenus.create({
-            title: "Download Image with XDM",
-            contexts: ["image"],
-            onclick: sendImageToXDM,
-        });
+		// Add a listener for the click event
+		chrome.contextMenus.onClicked.addListener(function(info, tab) {
+			// Check if the clicked menu item has the ID "uniqueid1"
+			if (info.menuItemId === "uniqueid1") {
+				// Call the sendLinkToXDM function with the URL of the clicked element
+				sendLinkToXDM(info);
+			}
+		});
 
-        chrome.contextMenus.create({
-            title: "Download all links",
-            contexts: ["all"],
-            onclick: runContentScript,
-        });
+      // Create the context menu item
+		chrome.contextMenus.create({
+			id: "uniqueid2",
+			title: "Download Image with XDM",
+			contexts: ["image"],
+		});
+
+		// Add a listener for the click event
+		chrome.contextMenus.onClicked.addListener(function(info, tab) {
+			// Check if the clicked menu item has the ID "uniqueid2"
+			if (info.menuItemId === "uniqueid2") {
+				// Call the sendImageToXDM function with the URL of the clicked image
+				console.log(info);
+				sendImageToXDM(info);
+			}
+		});
+
+
+		// Create the context menu item
+		chrome.contextMenus.create({
+			id: "uniqueid3",
+			title: "Download all links",
+			contexts: ["all"],
+		});
+
+		// Add a listener for the click event
+		chrome.contextMenus.onClicked.addListener(function(info, tab) {
+			// Check if the clicked menu item has the ID "uniqueid3"
+			if (info.menuItemId === "uniqueid3") {
+				// Send a message to the content script to download all links on the page
+				chrome.tabs.sendMessage(tab.id, { action: "downloadAllLinks" });
+			}
+		});
+
     };
 
     initSelf();
