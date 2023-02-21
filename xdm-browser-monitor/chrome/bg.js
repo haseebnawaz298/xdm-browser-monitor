@@ -58,18 +58,27 @@
             }
             log(data);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + (video ? "/video" : "/download"), true);
-            xhr.send(data);
+            var xhr = fetch(xdmHost + (video ? "/video" : "/download"), {
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: data,
+			  });			  
         });
     };
 
     var sendRecUrl = function (urls, index, data) {
         if (index == urls.length - 1) {
             log(data);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + "/links", true);
-            xhr.send(data);
+            var xhr = fetch(xdmHost + "/links", {
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: data,
+			  });
+			  
             return;
         }
         var url = urls[index];
@@ -100,9 +109,14 @@
             }
             log(data);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', xdmHost + "/download", true);
-            xhr.send(data);
+            var xhr = fetch(xdmHost + "/download", {
+				method: "POST",
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: data,
+			  });
+			  
         });
     };
 
@@ -300,35 +314,43 @@
         return false;
     };
 
-    var syncXDM = function () {
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == XMLHttpRequest.DONE) {
-                if (xhr.status == 200) {
-                    var data = JSON.parse(xhr.responseText);
-                    monitoring = data.enabled;
-                    blockedHosts = data.blockedHosts;
-                    videoUrls = data.videoUrls;
-                    fileExts = data.fileExts;
-                    vidExts = data.vidExts;
-                    isXDMUp = true;
-                    videoList = data.vidList;
-                    if (data.mimeList) {
-                        mimeList = data.mimeList;
-                    }
-                    updateBrowserAction();
-                }
-                else {
-                    isXDMUp = false;
-                    monitoring = false;
-                    updateBrowserAction();
-                }
-            }
-        };
+	
 
-        xhr.open('GET', xdmHost + "/sync", true);
-        xhr.send(null);
-    };
+	var syncXDM = function () {
+		fetch(xdmHost + "/sync",{	method: "POST", 
+		headers: { 
+			'Content-Type': 'application/json' 
+		}, mode:'cors'})
+			.then(response => {
+				// console.log(response);
+				if (response.ok) {
+					return response.json();
+				} else {
+					throw new Error("Error fetching data");
+				}
+			})
+			.then(data => {
+				monitoring = data.enabled;
+				blockedHosts = data.blockedHosts;
+				videoUrls = data.videoUrls;
+				fileExts = data.fileExts;
+				vidExts = data.vidExts;
+				isXDMUp = true;
+				videoList = data.vidList;
+				if (data.mimeList) {
+					mimeList = data.mimeList;
+				}
+				updateBrowserAction();
+			})
+			.catch(error => {
+				// console.log(error);
+				isXDMUp = false;
+				monitoring = false;
+				updateBrowserAction();
+			});
+	};
+	
+	
 
     var getFileFromUrl = function (str) {
         return ustr = parseUrl(str).pathname;
@@ -377,6 +399,7 @@
     };
 
     var updateBrowserAction = function () {
+		// console.log(isXDMUp);
         if (!isXDMUp) {
             setBrowserActionPopUp("fatal.html");
             setBrowserActionIcon("icon_blocked.png");
@@ -395,9 +418,9 @@
         }
 
         if (videoList && videoList.length > 0) {
-            chrome.browserAction.setBadgeText({ text: videoList.length + "" });
+            chrome.action.setBadgeText({ text: videoList.length + "" });
         } else {
-            chrome.browserAction.setBadgeText({ text: "" });
+            chrome.action.setBadgeText({ text: "" });
         }
     };
 
@@ -405,7 +428,7 @@
         if (lastIcon == icon) {
             return;
         }
-        chrome.browserAction.setIcon({ path: icon });
+        chrome.action.setIcon({ path: icon });
         lastIcon = icon;
     };
 
@@ -413,7 +436,8 @@
         if (lastPopup == pop) {
             return;
         }
-        chrome.browserAction.setPopup({ popup: pop });
+
+        chrome.action.setPopup({ popup: pop });
         lastPopup = pop;
     };
 
@@ -484,38 +508,43 @@
         //check XDM if is running and enable monitoring
         setInterval(function () { syncXDM(); }, 1000);
 
-        chrome.runtime.onMessage.addListener(
-            function (request, sender, sendResponse) {
-                if (request.type === "links") {
-                    var arr = [];
-                    arr = request.links;
-                    /* for (var i = 0; i < arr.length; i++) {
-                        console.log("link " + arr[i]);
-                    } */
-                    sendUrlsToXDM(arr);
-                    sendResponse({ done: "done" });
-                }
-                else if (request.type === "stat") {
-                    var resp = { isDisabled: disabled };
-                    resp.list = videoList;
-                    sendResponse(resp);
-                }
-                else if (request.type === "cmd") {
-                    disabled = request.disable;
-                    log("disabled " + disabled);
-                }
-                else if (request.type === "vid") {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', xdmHost + "/item", true);
-                    xhr.send(request.itemId);
-                }
-                else if (request.type === "clear") {
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('GET', xdmHost + "/clear", true);
-                    xhr.send();
-                }
-            }
-        );
+		chrome.runtime.onMessage.addListener(
+			function (request, sender, sendResponse) {
+			  if (request.type === "links") {
+				var arr = [];
+				arr = request.links;
+				sendUrlsToXDM(arr);
+				sendResponse({ done: "done" });
+			  }
+			  else if (request.type === "stat") {
+				var resp = { isDisabled: disabled };
+				resp.list = videoList;
+				sendResponse(resp);
+			  }
+			  else if (request.type === "cmd") {
+				disabled = request.disable;
+				log("disabled " + disabled);
+			  }
+			  else if (request.type === "vid") {
+				fetch(xdmHost + "/item", {
+				  method: "POST",
+				   headers: {
+						'Content-Type': 'application/json'
+					},
+				  body: request.itemId,
+				});
+			  }
+			  else if (request.type === "clear") {
+				fetch(xdmHost + "/clear", {
+				  method: "GET",
+				   headers: {
+						'Content-Type': 'application/json'
+					},
+				});
+			  }
+			}
+		  );
+		  
 
         chrome.commands.onCommand.addListener(function (command) {
             if (isXDMUp && monitoring) {

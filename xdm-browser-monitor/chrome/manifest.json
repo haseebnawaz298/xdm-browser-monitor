@@ -1,6 +1,6 @@
 {
   "update_url": "https://clients2.google.com/service/update2/crx",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "minimum_chrome_version": "18.0",
   "name": "XDM Browser Monitor",
   "description": "XDM integration module for Firefox and Chromimum based browsers",
@@ -9,20 +9,43 @@
     "48": "icon.png"
   },
   "background": {
-    "page": "background.html"
+    "service_worker": "bg.js",
+    "declarative_net_request": {
+      "rule_resources": [
+        {
+          "id": "xdm_download_rule",
+          "enabled": true,
+          "priority": 1,
+          "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+              {
+                "header": "X-Download-Manager",
+                "value": "XDM"
+              }
+            ]
+          },
+          "condition": {
+            "urlFilter": ["*://*/*"]
+          }
+        }
+      ]
+    }
   },
-  "browser_action": {
-    "default_icon": "icon.png"
+  "action": {
+    "default_icon": "icon.png",
+    "default_popup": "fatal.html"
   },
   "permissions": [
     "tabs",
     "cookies",
     "contextMenus",
     "activeTab",
+    "declarativeNetRequest",
     "webRequest",
-    "webRequestBlocking",
-    "*://*/*"
+    "webRequestBlocking"
   ],
+  "host_permissions": ["*://*/*"],
   "commands": {
     "toggle-monitoring": {
       "suggested_key": {
